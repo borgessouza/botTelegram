@@ -3,6 +3,7 @@
 
 import logging
 import requests
+import sys
 
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 
@@ -12,10 +13,11 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 
 logger = logging.getLogger(__name__)
 
-URI='Http://localhost:8080/twitter/'
 TAG_SEARCH='tagSearch/%23'
-
-
+LOAD='carregar'
+USER='user/tag'
+LANG='lang'
+DATA='data'
 
 
 def start(bot, update):
@@ -35,22 +37,22 @@ def help(bot, update):
 def carregar(bot, update):
     text_answer = 'carregando'
     bot.send_message(chat_id=update.message.chat_id, text=text_answer)
-    retorno = requests.get(URI + 'carregar' )
+    retorno = requests.get(URI + LOAD )
     if retorno.status_code == 200:
         bot.send_message(chat_id=update.message.chat_id, text='Carregado!!')
 
 def users(bot, update):
-    retorno = requests.get(URI + 'user/tag' )
+    retorno = requests.get(URI + USER )
     if retorno.status_code == 200:
         bot.send_message(chat_id=update.message.chat_id, text=retorno.text)
 
 def lang(bot, update):
-    retorno = requests.get(URI + 'lang/pt' )
+    retorno = requests.get(URI + LANG )
     if retorno.status_code == 200:
         bot.send_message(chat_id=update.message.chat_id, text=retorno.text)
 
 def data(bot, update):
-    retorno = requests.get(URI + 'data' )
+    retorno = requests.get(URI + DATA )
     if retorno.status_code == 200:
         bot.send_message(chat_id=update.message.chat_id, text=retorno.text)
 
@@ -59,7 +61,8 @@ def echo(bot, update):
     bot.send_message(chat_id=update.message.chat_id, text=text_answer)
 
 def encontrar_tags(bot, update):
-    texto = update.message.text.replace('/tag ','')
+    texto = update.message.text.replace('/tag','')
+    texto = texto.replace(' ','')
     if texto:
         retorno = requests.get(URI + TAG_SEARCH + texto)
         bot.send_message(chat_id=update.message.chat_id, text=retorno.text)
@@ -68,31 +71,46 @@ def encontrar_tags(bot, update):
 
 def error(bot, update):
     """Log Errors caused by Updates."""
-    logger.warning('Update caused error "%s"', update.message)
+    logger.warning('Ops Aconteceu um error "%s"', update.message)
 
 
 
 def main():
-   updater = Updater("894039799:AAF9KN2h8Uk9LbX6z9A3xqHLAPd_TGw-JHE")
+    BOT_TOKEN = None
 
-   dp = updater.dispatcher
+    if not BOT_TOKEN:
+        print ('Favor preencher o token do Bot')
+        sys.exit(1)
 
-   dp.add_handler(CommandHandler("start", start))
-   dp.add_handler(CommandHandler("help", help))
-   dp.add_handler(CommandHandler("tag",encontrar_tags))
-   dp.add_handler(CommandHandler("carregar", carregar))
-   dp.add_handler(CommandHandler("users", users))
-   dp.add_handler(CommandHandler("lang", lang))
-   dp.add_handler(CommandHandler("data", data))
-   dp.add_handler(CommandHandler("echo", echo))
+    updater = Updater(BOT_TOKEN)
 
-   dp.add_handler(MessageHandler(Filters.text, echo))
+    dp = updater.dispatcher
 
-   dp.add_error_handler(error)
+    dp.add_handler(CommandHandler("start", start))
+    dp.add_handler(CommandHandler("help", help))
+    dp.add_handler(CommandHandler("tag",encontrar_tags))
+    dp.add_handler(CommandHandler("carregar", carregar))
+    dp.add_handler(CommandHandler("users", users))
+    dp.add_handler(CommandHandler("lang", lang))
+    dp.add_handler(CommandHandler("data", data))
+    dp.add_handler(CommandHandler("echo", echo))
 
-   updater.start_polling()
-   updater.idle()
+    dp.add_handler(MessageHandler(Filters.text, echo))
+
+    dp.add_error_handler(error)
+
+    updater.start_polling()
+    updater.idle()
 
 
 if __name__ == '__main__':
-    main()
+    if len(sys.argv) < 3:
+        print ('Favor preencher parametros: [Servidor porta]')
+        sys.exit(1)
+    else:
+        SERVIDOR=sys.argv[1]
+        PORTA=sys.argv[2]
+        print('Utilizando:')
+        URI='http://' + SERVIDOR + ':' + PORTA +  '/twitter/'
+        print(URI)
+        main()
