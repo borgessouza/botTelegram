@@ -19,5 +19,6 @@ Projeto desenvolvido com integração com a API do comunicador Telegram.
 
 ### Executing 
 ```
+pip install -r requirements.txt
 ./botTelegram.py  localhost 8080
 ```
